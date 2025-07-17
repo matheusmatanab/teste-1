@@ -1,0 +1,45 @@
+#include <AFMotor.h>
+
+// ----------------------- M O T O R ---------------------------------
+AF_DCMotor motor(2);          // Motor na porta M2 do shield
+const int potPin = A12;       // Potenciômetro
+
+// ----------------------- S E N S O R -------------------------------
+const int sensorPin = 18;     
+volatile unsigned long contagem = 0;
+
+void countPulse() {
+  contagem++;
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(sensorPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, RISING);
+
+  motor.setSpeed(0);
+  motor.run(FORWARD);
+}
+
+void loop() {
+  // ---------- Controle do motor ----------
+  int potValue = analogRead(potPin);
+  int pwmValue = map(potValue, 0, 1023, 0, 100);
+  motor.setSpeed(pwmValue);
+
+  static unsigned long ultimaLeitura = 0;
+  static unsigned long ultimaContagem = 0;
+
+  noInterrupts();
+  unsigned long atualContagem = contagem;
+  interrupts();
+
+  if (atualContagem != ultimaContagem) {
+    ultimaContagem = atualContagem;
+    Serial.print("PULSO DETECTADO : ");
+    Serial.println(atualContagem);
+  }
+
+  delay(10); // pequena pausa
+}
